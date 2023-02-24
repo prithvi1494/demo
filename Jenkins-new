@@ -1,0 +1,35 @@
+pipeline{
+  agent any
+ 
+  environment{
+   PATH = "/opt/maven3/bin:$PATH”
+  }
+  stages{
+      stage("Gte Checkout"){
+          steps{
+              git credentialsId: 'prithvi1494',  url: 'https://github.com/prithvi1494/JENKINS.git
+          }
+      }
+      stage("Maven Build"){
+          steps{
+              sh "mvn clean package"
+              sh "mv target/*.war target/myweb.war"
+          }
+      }
+      stage("deploy-dev"){
+          steps{
+               sshagent(['tomcat-new']){
+               sh """
+                    scp -o StrictHostKeyChecking=no target/myweb.war ec2-user@publicip:/home/ec2-user/apache-tomcat-version/webapps/
+                   
+                    ssh ec2-user@publicip:/home/ec2-user/apache-tomcat-version/bin/shutdown.sh
+                   
+                    ssh ec2-user@publicip:/home/ec2-user/apache-tomcat-version/bin/startup.sh
+                   
+                 """
+           }
+          
+           }
+        }
+    }
+}
